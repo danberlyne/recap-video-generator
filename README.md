@@ -1,5 +1,5 @@
 # About
-This tool selects clips from video files combines them into a single "recap" video file, with crossfade and audio normalisation, as well as custom subtitles.
+This tool extracts clips from multiple video files, resizes them to the same resolution, and combines them into a single "recap" video file, with crossfade and audio normalisation, as well as custom subtitles.
 
 # Requirements
 This tool uses the third party Python modules OpenPyXL and MoviePy. Furthermore, MoviePy requires ImageMagick. Please install these before attempting to run the Python scripts included here.
