@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# recap_generator.py - Extracts clips from video files and combines them into a single recap video.
+
 import openpyxl
 from pathlib import Path
 from moviepy.editor import *
