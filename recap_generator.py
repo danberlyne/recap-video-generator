@@ -11,8 +11,8 @@ def main():
     # Get filenames from spreadsheet.
     wb = openpyxl.load_workbook('video_data.xlsx')
     ws = wb.active
-    id_cells = [cell for cell in ws['A'] if cell.value != 'FILENAME' and cell.value != None]
-    ids = [str(cell.value) for cell in ws['A'] if cell.value != 'FILENAME']
+    id_cells = [cell for cell in ws['A'] if cell.value != 'FILENAME' and cell.value != None and cell.value != '']
+    ids = [str(cell.value) for cell in ws['A'] if cell.value != 'FILENAME' and cell.value != None and cell.value != '']
 
     # Pick out the specified clips from the files and normalise their audio.
     video_clips = [VideoFileClip(str(Path('Videos', f'{id}'))).subclip(str(ws[f'B{id_cells[ids.index(id)].row}'].value), str(ws[f'C{id_cells[ids.index(id)].row}'].value)).fx(afx.audio_normalize) for id in ids]
