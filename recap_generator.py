@@ -8,6 +8,7 @@ import moviepy.audio.fx.all as afx
 import moviepy.video.fx.all as vfx
 from moviepy.video.tools.subtitles import SubtitlesClip
 
+# `alignment` is the alignment of subtitles in the video (left/center/right).
 def main(alignment):
     # Get filenames from spreadsheet.
     wb = openpyxl.load_workbook('video_data.xlsx')
@@ -23,14 +24,15 @@ def main(alignment):
 
     # Concatenate clips with crossfade.
     custom_padding = 1
-    faded_clips = [resized_clips[0]]
+    faded_clips = [vfx.fadein(afx.audio_fadeout(afx.audio_fadein(resized_clips[0], custom_padding), custom_padding), custom_padding)]
     idx = resized_clips[0].duration - custom_padding
     for clip in resized_clips[1:]:
+        clip = afx.audio_fadein(clip, custom_padding)
+        clip = afx.audio_fadeout(clip, custom_padding)
         faded_clips.append(clip.set_start(idx).crossfadein(custom_padding))
         idx += clip.duration - custom_padding
     # Fade the final clip out to black.
     faded_clips[-1] = vfx.fadeout(faded_clips[-1], custom_padding)
-    faded_clips[-1] = afx.audio_fadeout(faded_clips[-1], custom_padding)
     video = CompositeVideoClip(faded_clips)
 
     # Add subtitles.
