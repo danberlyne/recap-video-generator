@@ -1,8 +1,10 @@
 # About
 This tool extracts clips from multiple video files, resizes them to the same resolution, and combines them into a single "recap" video file, with crossfade and audio normalisation, as well as custom subtitles. It is compatible with Linux, Mac, and Windows.
 
+The user can either specify their desired clips manually or let `recap-video-generator` automatically select the best clip for each video by detecting choruses within the audio.
+
 # Requirements
-This tool uses the third party Python modules OpenPyXL and MoviePy. Furthermore, MoviePy requires ImageMagick. Please install these before attempting to run the Python scripts included here. Note that MoviePy uses features of Pillow 9.5.0 that are no longer supported in the most recent version of Pillow, so you may need to roll back your version of Pillow. Do this by typing `pip install Pillow==9.5.0` in the terminal.
+This tool uses the third party Python modules OpenPyXL, MoviePy, and Pychorus. Furthermore, MoviePy requires ImageMagick. Please install these before attempting to run the Python scripts included here. Note that MoviePy uses features of Pillow 9.5.0 that are no longer supported in the most recent version of Pillow, so you may need to roll back your version of Pillow. Do this by typing `pip install Pillow==9.5.0` in the terminal.
 
 If you are on Linux/Mac, you will need to edit ImageMagick's access permissions in `policy.xml` in order for MoviePy to work properly:
 
@@ -21,7 +23,9 @@ If you are on Windows, you will need to specify the path to ImageMagick in Movie
 # Instructions
 1. Put the video files that are to be used for the recap in the `Videos` folder provided.
 2. Enter the following data into `video_data.xlsx`:
-- the filenames of the video files in the `Videos` folder, including extensions;
-- the start and end times of the video clips you wish to include in the recap, in the form `hh:mm:ss`;
-- three lines of subtitles for each clip.
+- The filenames of the video files in the `Videos` folder, including extensions;
+- (Optional) The start and end times of the video clips you wish to include in the recap, in the form `hh:mm:ss`;
+- (Optional) Three lines of subtitles for each clip.
 3. Run `recap_generator.py`.
+
+Note, if the user does not specify a start and end time for a given clip, `recap-video-generator` will attempt to detect a chorus within the audio and select a clip automatically.
