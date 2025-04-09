@@ -69,7 +69,7 @@ def main(clip_selection, clip_length, alignment):
     # Add subtitles.
     print('Generating subtitles...')
     subtitles = []
-    generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white')
+    generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white', stroke_color='black')
     if alignment == 'center':
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
@@ -77,14 +77,14 @@ def main(clip_selection, clip_length, alignment):
                 for clip in video_clips]
         subtitles.append(SubtitlesClip(subs, generator))
 
-        generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white')
+        generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white', stroke_color='black')
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 ' ' + '\n' + str(ws[f'E{id_cells[video_clips.index(clip)].row}'].value) + '\n' + ' ') # Text of subtitle
                 for clip in video_clips]
         subtitles.append(SubtitlesClip(subs, generator))
 
-        generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white')
+        generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white', stroke_color='black')
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 ' ' + '\n' + ' ' + '\n' + str(ws[f'F{id_cells[video_clips.index(clip)].row}'].value)) # Text of subtitle
@@ -97,14 +97,14 @@ def main(clip_selection, clip_length, alignment):
                 for clip in video_clips]
         subtitles.append(SubtitlesClip(subs, generator))
 
-        generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white')
+        generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white', stroke_color='black')
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 ' ' + '\n' + ' ' + str(ws[f'E{id_cells[video_clips.index(clip)].row}'].value) + '\n' + ' ') # Text of subtitle
                 for clip in video_clips]
         subtitles.append(SubtitlesClip(subs, generator))
 
-        generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white')
+        generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white', stroke_color='black')
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 ' ' + '\n' + ' ' + '\n' + ' ' + str(ws[f'F{id_cells[video_clips.index(clip)].row}'].value)) # Text of subtitle
@@ -117,14 +117,14 @@ def main(clip_selection, clip_length, alignment):
                 for clip in video_clips]
         subtitles.append(SubtitlesClip(subs, generator))
 
-        generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white')
+        generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white', stroke_color='black')
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 ' ' + '\n' + str(ws[f'E{id_cells[video_clips.index(clip)].row}'].value) + ' ' + '\n' + ' ') # Text of subtitle
                 for clip in video_clips]
         subtitles.append(SubtitlesClip(subs, generator))
 
-        generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white')
+        generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white', stroke_color='black')
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 ' ' + '\n' + ' ' + '\n' + str(ws[f'F{id_cells[video_clips.index(clip)].row}'].value) + ' ') # Text of subtitle
