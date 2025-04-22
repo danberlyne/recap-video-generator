@@ -11,7 +11,7 @@ from pychorus import find_and_output_chorus
 
 # `alignment` is the alignment of subtitles in the video (left/center/right).
 # `clip_selection` determines whether to use `pychorus` to detect clips (auto) or whether to use user-defined clips (manual).
-def main(clip_selection, clip_length, alignment):
+def main(clip_selection, clip_length, alignment, include_intro, overlay_intro_image):
     # Get filenames from spreadsheet.
     print('Importing data from spreadsheet...')
     wb = openpyxl.load_workbook('video_data.xlsx')
@@ -46,9 +46,44 @@ def main(clip_selection, clip_length, alignment):
         if chorus_error:
             raise TypeError(f'Auto-generation failed for some clips. Please choose clips manually for the videos specified below then try again.\n{missing_choruses}')
 
+    if overlay_intro_image:
+        start_clip_idx = 1
+    else:
+        start_clip_idx = 0
+    
     print('Resizing clips...')
     # Resize clips while maintaining aspect ratio and then add black borders if necessary to reach 1920x1080p.
-    resized_clips = [CompositeVideoClip([ImageClip('1920x1080-black.jpg', duration=clip.duration).resize((1920, 1080)), clip.resize(height=1080).set_position('center', 'center')]) if clip.w / clip.h <= 1920 / 1080 else CompositeVideoClip([ImageClip('1920x1080-black.jpg', duration=clip.duration), clip.resize(width=1920).set_position('center', 'center')]) for clip in video_clips]
+    # Also add intro image overlay.
+    resized_clips = []
+
+    for clip in video_clips[:start_clip_idx]:
+        img_clip = ImageClip('intro.png', duration=clip.duration)
+        img_size_ratio = 0.5
+        
+        if clip.w / clip.h <= 1920 / 1080 and img_clip.w / img_clip.h <= 1920 / 1080:
+            resized_clips.append(CompositeVideoClip([ImageClip('1920x1080-black.jpg', duration=clip.duration).resize((1920, 1080)), 
+                                                clip.resize(height=1080).set_position('center', 'center'),
+                                                img_clip.resize(height=round(1080*img_size_ratio)).set_position('center', 'center')]))
+        elif clip.w / clip.h > 1920 / 1080 and img_clip.w / img_clip.h <= 1920 / 1080:
+            resized_clips.append(CompositeVideoClip([ImageClip('1920x1080-black.jpg', duration=clip.duration).resize((1920, 1080)), 
+                                                clip.resize(width=1920).set_position('center', 'center'),
+                                                img_clip.resize(height=round(1080*img_size_ratio)).set_position('center', 'center')])) 
+        elif clip.w / clip.h <= 1920 / 1080 and img_clip.w / img_clip.h > 1920 / 1080:
+            resized_clips.append(CompositeVideoClip([ImageClip('1920x1080-black.jpg', duration=clip.duration).resize((1920, 1080)), 
+                                                clip.resize(height=1080).set_position('center', 'center'),
+                                                img_clip.resize(width=round(1920*img_size_ratio)).set_position('center', 'center')])) 
+        else: 
+            resized_clips.append(CompositeVideoClip([ImageClip('1920x1080-black.jpg', duration=clip.duration), 
+                                              clip.resize(width=1920).set_position('center', 'center'),
+                                              img_clip.resize(width=round(1920*img_size_ratio)).set_position('center', 'center')]))
+
+    resized_clips += [CompositeVideoClip([ImageClip('1920x1080-black.jpg', duration=clip.duration).resize((1920, 1080)), 
+                                         clip.resize(height=1080).set_position('center', 'center')]) 
+                      if clip.w / clip.h <= 1920 / 1080 
+                      else CompositeVideoClip([ImageClip('1920x1080-black.jpg', duration=clip.duration), 
+                                               clip.resize(width=1920).set_position('center', 'center')]) 
+                      for clip in video_clips[start_clip_idx:]
+                     ]
 
     print('Adding crossfade to clips...')
     # Concatenate clips with crossfade.
@@ -69,71 +104,117 @@ def main(clip_selection, clip_length, alignment):
     # Add subtitles.
     print('Generating subtitles...')
     subtitles = []
+    start_clip_idx = 0
+    start_sub_idx = 0
+
+    if include_intro:
+        start_clip_idx = 1
+
+        if ws[f'D{id_cells[0].row}'].value:
+            generator = lambda txt: TextClip(txt, font='Arial-Bold', fontsize=150, color='white', stroke_color='black')
+            intro_sub = [
+                        ((custom_padding, # Start time of subtitle
+                        int(video_clips[0].duration - custom_padding)), # End time of subtitle
+                        str(ws[f'D{id_cells[0].row}'].value) + '\n' + ' ' + '\n' + ' ') # Text of subtitle
+                        ]
+            subtitles.append(SubtitlesClip(intro_sub, generator))
+
+        if ws[f'E{id_cells[0].row}'].value:
+            generator = lambda txt: TextClip(txt, font='Arial', fontsize=120, color='white', stroke_color='black')
+            intro_sub = [
+                        ((custom_padding, # Start time of subtitle
+                        int(video_clips[0].duration - custom_padding)), # End time of subtitle
+                        ' ' + '\n' + str(ws[f'E{id_cells[0].row}'].value) + '\n' + ' ') # Text of subtitle
+                        ]
+            subtitles.append(SubtitlesClip(intro_sub, generator))
+
+        if ws[f'F{id_cells[0].row}'].value:
+            generator = lambda txt: TextClip(txt, font='Arial', fontsize=100, color='white', stroke_color='black')
+            intro_sub = [
+                        ((custom_padding, # Start time of subtitle
+                        int(video_clips[0].duration - custom_padding)), # End time of subtitle
+                        ' ' + '\n' + ' ' + '\n' + str(ws[f'F{id_cells[0].row}'].value)) # Text of subtitle
+                        ]
+            subtitles.append(SubtitlesClip(intro_sub, generator))
+
+        start_sub_idx = len(subtitles)
+
     generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white', stroke_color='black')
     if alignment == 'center':
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 str(ws[f'D{id_cells[video_clips.index(clip)].row}'].value) + '\n' + ' ' + '\n' + ' ') # Text of subtitle
-                for clip in video_clips]
-        subtitles.append(SubtitlesClip(subs, generator))
+                for clip in video_clips[start_clip_idx:]]
+        if subs:
+            subtitles.append(SubtitlesClip(subs, generator))
 
         generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white', stroke_color='black')
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 ' ' + '\n' + str(ws[f'E{id_cells[video_clips.index(clip)].row}'].value) + '\n' + ' ') # Text of subtitle
-                for clip in video_clips]
-        subtitles.append(SubtitlesClip(subs, generator))
+                for clip in video_clips[start_clip_idx:]]
+        if subs:
+            subtitles.append(SubtitlesClip(subs, generator))
 
         generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white', stroke_color='black')
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 ' ' + '\n' + ' ' + '\n' + str(ws[f'F{id_cells[video_clips.index(clip)].row}'].value)) # Text of subtitle
-                for clip in video_clips]
-        subtitles.append(SubtitlesClip(subs, generator))
+                for clip in video_clips[start_clip_idx:]]
+        if subs:
+            subtitles.append(SubtitlesClip(subs, generator))
     elif alignment == 'left':
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 ' ' + str(ws[f'D{id_cells[video_clips.index(clip)].row}'].value) + '\n' + ' ' + '\n' + ' ') # Text of subtitle
-                for clip in video_clips]
-        subtitles.append(SubtitlesClip(subs, generator))
+                for clip in video_clips[start_clip_idx:]]
+        if subs:
+            subtitles.append(SubtitlesClip(subs, generator))
 
         generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white', stroke_color='black')
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 ' ' + '\n' + ' ' + str(ws[f'E{id_cells[video_clips.index(clip)].row}'].value) + '\n' + ' ') # Text of subtitle
-                for clip in video_clips]
-        subtitles.append(SubtitlesClip(subs, generator))
+                for clip in video_clips[start_clip_idx:]]
+        if subs:
+            subtitles.append(SubtitlesClip(subs, generator))
 
         generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white', stroke_color='black')
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 ' ' + '\n' + ' ' + '\n' + ' ' + str(ws[f'F{id_cells[video_clips.index(clip)].row}'].value)) # Text of subtitle
-                for clip in video_clips]
-        subtitles.append(SubtitlesClip(subs, generator))
+                for clip in video_clips[start_clip_idx:]]
+        if subs:
+            subtitles.append(SubtitlesClip(subs, generator))
     elif alignment == 'right':
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 str(ws[f'D{id_cells[video_clips.index(clip)].row}'].value) + '  ' + '\n' + ' ' + '\n' + ' ') # Text of subtitle
-                for clip in video_clips]
-        subtitles.append(SubtitlesClip(subs, generator))
+                for clip in video_clips[start_clip_idx:]]
+        if subs:
+            subtitles.append(SubtitlesClip(subs, generator))
 
         generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white', stroke_color='black')
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 ' ' + '\n' + str(ws[f'E{id_cells[video_clips.index(clip)].row}'].value) + ' ' + '\n' + ' ') # Text of subtitle
-                for clip in video_clips]
-        subtitles.append(SubtitlesClip(subs, generator))
+                for clip in video_clips[start_clip_idx:]]
+        if subs:
+            subtitles.append(SubtitlesClip(subs, generator))
 
         generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white', stroke_color='black')
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 ' ' + '\n' + ' ' + '\n' + str(ws[f'F{id_cells[video_clips.index(clip)].row}'].value) + ' ') # Text of subtitle
-                for clip in video_clips]
-        subtitles.append(SubtitlesClip(subs, generator))
+                for clip in video_clips[start_clip_idx:]]
+        if subs:
+            subtitles.append(SubtitlesClip(subs, generator))
 
     # Align subtitles according to user input.
     print('Adding subtitles...')
-    recap = CompositeVideoClip([video] + [sub.set_pos((f'{alignment}','bottom')) for sub in subtitles])
+    recap = CompositeVideoClip([video] + 
+                               [sub.set_pos(('center','center')) for sub in subtitles[:start_sub_idx]] + 
+                               [sub.set_pos((f'{alignment}','bottom')) for sub in subtitles[start_sub_idx:]])
 
     # Save recap video file.
     print('Saving recap...')
@@ -160,5 +241,24 @@ if __name__ == '__main__':
         alignment = input().lower()
         if alignment == 'centre':
             alignment = 'center'
+
+    include_intro = ''
+    while include_intro not in (True, False):
+        print('Are you including an intro clip? (y/n)')
+        include_intro = input().lower()
+        if include_intro == 'y':
+            include_intro = True
+        elif include_intro == 'n':
+            include_intro = False
+
+    overlay_intro_image = ''
+    if include_intro:
+        while overlay_intro_image not in (True, False):
+            print('Do you want to overlay a custom image on the intro clip? (y/n)')
+            overlay_intro_image = input().lower()
+            if overlay_intro_image == 'y':
+                overlay_intro_image = True
+            elif overlay_intro_image == 'n':
+                overlay_intro_image = False
     
-    main(clip_selection, clip_length, alignment)
+    main(clip_selection, clip_length, alignment, include_intro, overlay_intro_image)
