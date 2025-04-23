@@ -23,9 +23,11 @@ If you are on Windows, you will need to specify the path to ImageMagick in Movie
 # Instructions
 1. Put the video files that are to be used for the recap in the `Videos` folder provided.
 2. Enter the following data into `video_data.xlsx`:
-- The filenames of the video files in the `Videos` folder, including extensions;
-- (Optional) The start and end times of the video clips you wish to include in the recap, in the form `hh:mm:ss`;
-- (Optional) Three lines of subtitles for each clip.
-3. Run `recap_generator.py`.
+    - The filenames of the video files in the `Videos` folder, including extensions;
+    - (Optional) The start and end times of the video clips you wish to include in the recap, in the form `hh:mm:ss`;
+    - (Optional) Three lines of subtitles for each clip.
+3. (Optional) If you wish to use a custom image overlay on your first clip, place your image in the same directory as `video_data.xlsx` and name it `intro.png`.
+4. Run `recap_generator.py` and follow the on-screen instructions.
+    - Note: If you specify that you are using your first clip as an intro clip, any subtitles for that clip will automatically be enlarged and placed in the centre of the screen. This may be used as an alternative to a custom image overlay.
 
 Note, if the user does not specify a start and end time for a given clip, `recap-video-generator` will attempt to detect a chorus within the audio and select a clip automatically.
