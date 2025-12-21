@@ -8,24 +8,68 @@ import moviepy.audio.fx.all as afx
 import moviepy.video.fx.all as vfx
 from moviepy.video.tools.subtitles import SubtitlesClip
 from pychorus import find_and_output_chorus
+from typing import Literal
 
-# `alignment` is the alignment of subtitles in the video (left/center/right).
-# `clip_selection` determines whether to use `pychorus` to detect clips (auto) or whether to use user-defined clips (manual).
-def main(clip_selection, clip_length, alignment, include_intro, overlay_intro_image):
-    # Get filenames from spreadsheet.
-    print('Importing data from spreadsheet...')
+# `sub_alignment` is the alignment of subtitles in the video (left/center/right).
+# `clip_selection_method` determines whether to use `pychorus` to detect clips (auto) or whether to use user-defined clips (manual).
+def generate_recap(clip_selection_method: Literal['auto', 'manual'], 
+                   clip_length: int, 
+                   sub_alignment: Literal['left', 'center', 'right'], 
+                   include_intro: bool, 
+                   overlay_intro_image: bool, 
+                   fullscreen_intro_image: bool, 
+                   intro_image_duration: int
+                   ) -> None:
     wb = openpyxl.load_workbook('video_data.xlsx')
     ws = wb.active
-    id_cells = [cell for cell in ws['A'] if cell.value != 'FILENAME' and cell.value != None and cell.value != '']
-    ids = [str(cell.value) for cell in ws['A'] if cell.value != 'FILENAME' and cell.value != None and cell.value != '']
+
+    print('Importing data from spreadsheet...')
+    ids, id_cells = get_video_filenames(ws)
 
     print('Extracting clips...')
-    if clip_selection == 'manual':
+    video_clips = extract_clips(ws, ids, id_cells, clip_selection_method, clip_length)
+
+    if overlay_intro_image:
+        start_clip_idx = 1
+    else:
+        start_clip_idx = 0
+    
+    print('Resizing clips...')
+    resized_clips = resize_clips(video_clips, start_clip_idx, intro_image_duration, fullscreen_intro_image)
+
+    print('Adding crossfade to clips...')
+    custom_padding = 1
+    faded_clips = add_crossfade(resized_clips, custom_padding)
+    
+    print('Concatenating clips...')
+    video = CompositeVideoClip(faded_clips)
+
+    print('Generating subtitles...')
+    subtitles, start_sub_idx = generate_subtitles(ws, id_cells, video_clips, custom_padding, include_intro)
+
+    # Align subtitles according to user input.
+    print('Adding subtitles...')
+    recap = CompositeVideoClip([video] + 
+                               [sub.set_pos(('center','center')) for sub in subtitles[:start_sub_idx]] +    # Align intro text in centre
+                               [sub.set_pos((f'{sub_alignment}','bottom')) for sub in subtitles[start_sub_idx:]])
+
+    # Save recap video file.
+    print('Saving recap...')
+    recap.write_videofile('recap.mp4')
+
+def get_video_filenames(ws):
+    # Get video filenames from spreadsheet.
+    id_cells = [cell for cell in ws['A'] if cell.value != 'FILENAME' and cell.value != None and cell.value != '']
+    ids = [str(cell.value) for cell in ws['A'] if cell.value != 'FILENAME' and cell.value != None and cell.value != '']
+    return ids, id_cells
+
+def extract_clips(ws, ids, id_cells, clip_selection_method, clip_length):
+    if clip_selection_method == 'manual':
         # Pick out the specified clips from the files and normalise their audio.
         video_clips = []
         for i in range(len(ids)):
             video_clips.append(VideoFileClip(str(Path('Videos', f'{ids[i]}'))).subclip(str(ws[f'B{id_cells[i].row}'].value), str(ws[f'C{id_cells[i].row}'].value)).fx(afx.audio_normalize))
-    elif clip_selection == 'auto':
+    elif clip_selection_method == 'auto':
         chorus_error = False
         missing_choruses = []
         video_clips = []
@@ -45,20 +89,20 @@ def main(clip_selection, clip_length, alignment, include_intro, overlay_intro_im
                     missing_choruses.append(ids[i])
         if chorus_error:
             raise TypeError(f'Auto-generation failed for some clips. Please choose clips manually for the videos specified below then try again.\n{missing_choruses}')
-
-    if overlay_intro_image:
-        start_clip_idx = 1
-    else:
-        start_clip_idx = 0
     
-    print('Resizing clips...')
+    return video_clips
+
+def resize_clips(video_clips, start_clip_idx, intro_image_duration, fullscreen_intro_image):
     # Resize clips while maintaining aspect ratio and then add black borders if necessary to reach 1920x1080p.
     # Also add intro image overlay.
     resized_clips = []
 
     for clip in video_clips[:start_clip_idx]:
-        img_clip = ImageClip('intro.png', duration=clip.duration)
-        img_size_ratio = 0.5
+        img_clip = ImageClip('intro.png', duration=intro_image_duration)
+        if fullscreen_intro_image:
+            img_size_ratio = 1.0
+        else:
+            img_size_ratio = 0.5
         
         if clip.w / clip.h <= 1920 / 1080 and img_clip.w / img_clip.h <= 1920 / 1080:
             resized_clips.append(CompositeVideoClip([ImageClip('1920x1080-black.jpg', duration=clip.duration).resize((1920, 1080)), 
@@ -84,10 +128,11 @@ def main(clip_selection, clip_length, alignment, include_intro, overlay_intro_im
                                                clip.resize(width=1920).set_position('center', 'center')]) 
                       for clip in video_clips[start_clip_idx:]
                      ]
+    
+    return resized_clips
 
-    print('Adding crossfade to clips...')
-    # Concatenate clips with crossfade.
-    custom_padding = 1
+def add_crossfade(resized_clips, custom_padding):
+    # Add crossfade to clips.
     faded_clips = [vfx.fadein(afx.audio_fadeout(afx.audio_fadein(resized_clips[0], custom_padding), custom_padding), custom_padding)]
     idx = resized_clips[0].duration - custom_padding
     for i in range(len(resized_clips[1:])):
@@ -98,11 +143,10 @@ def main(clip_selection, clip_length, alignment, include_intro, overlay_intro_im
         idx += clip.duration - custom_padding
     # Fade the final clip out to black.
     faded_clips[-1] = vfx.fadeout(faded_clips[-1], custom_padding)
-    print('Concatenating clips...')
-    video = CompositeVideoClip(faded_clips)
 
-    # Add subtitles.
-    print('Generating subtitles...')
+    return faded_clips
+
+def generate_subtitles(ws, id_cells, video_clips, custom_padding, include_intro):
     subtitles = []
     start_clip_idx = 0
     start_sub_idx = 0
@@ -140,7 +184,7 @@ def main(clip_selection, clip_length, alignment, include_intro, overlay_intro_im
         start_sub_idx = len(subtitles)
 
     generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white', stroke_color='black')
-    if alignment == 'center':
+    if sub_alignment == 'center':
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 str(ws[f'D{id_cells[video_clips.index(clip)].row}'].value) + '\n' + ' ' + '\n' + ' ') # Text of subtitle
@@ -163,7 +207,7 @@ def main(clip_selection, clip_length, alignment, include_intro, overlay_intro_im
                 for clip in video_clips[start_clip_idx:]]
         if subs:
             subtitles.append(SubtitlesClip(subs, generator))
-    elif alignment == 'left':
+    elif sub_alignment == 'left':
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 ' ' + str(ws[f'D{id_cells[video_clips.index(clip)].row}'].value) + '\n' + ' ' + '\n' + ' ') # Text of subtitle
@@ -186,7 +230,7 @@ def main(clip_selection, clip_length, alignment, include_intro, overlay_intro_im
                 for clip in video_clips[start_clip_idx:]]
         if subs:
             subtitles.append(SubtitlesClip(subs, generator))
-    elif alignment == 'right':
+    elif sub_alignment == 'right':
         subs = [((int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)])) + custom_padding, # Start time of subtitle
                 int(sum(previous_clip.duration - custom_padding for previous_clip in video_clips[:video_clips.index(clip)+1]))), # End time of subtitle
                 str(ws[f'D{id_cells[video_clips.index(clip)].row}'].value) + '  ' + '\n' + ' ' + '\n' + ' ') # Text of subtitle
@@ -210,37 +254,30 @@ def main(clip_selection, clip_length, alignment, include_intro, overlay_intro_im
         if subs:
             subtitles.append(SubtitlesClip(subs, generator))
 
-    # Align subtitles according to user input.
-    print('Adding subtitles...')
-    recap = CompositeVideoClip([video] + 
-                               [sub.set_pos(('center','center')) for sub in subtitles[:start_sub_idx]] + 
-                               [sub.set_pos((f'{alignment}','bottom')) for sub in subtitles[start_sub_idx:]])
+    return subtitles, start_sub_idx
 
-    # Save recap video file.
-    print('Saving recap...')
-    recap.write_videofile('recap.mp4')
 
 if __name__ == '__main__':
-    clip_selection = ''
-    while clip_selection not in ('auto', 'manual'):
+    clip_selection_method = ''
+    while clip_selection_method not in ('auto', 'manual'):
         print('Please enter your desired method of clip selection (auto/manual)')
-        clip_selection = input().lower()
-        if clip_selection == 'automatic':
-            clip_selection = 'auto'
+        clip_selection_method = input().lower()
+        if clip_selection_method == 'automatic':
+            clip_selection_method = 'auto'
 
     clip_length = '0'
-    if clip_selection == 'auto':
+    if clip_selection_method == 'auto':
         while not clip_length.isnumeric() or int(float(clip_length)) <= 0:
             print('Please enter your desired clip length in seconds')
             clip_length = input()
     clip_length = int(float(clip_length))
 
-    alignment = ''
-    while alignment not in ('left', 'center', 'right'):
+    sub_alignment = ''
+    while sub_alignment not in ('left', 'center', 'right'):
         print('Please enter your desired subtitle alignment (left/center/right)')
-        alignment = input().lower()
-        if alignment == 'centre':
-            alignment = 'center'
+        sub_alignment = input().lower()
+        if sub_alignment == 'centre':
+            sub_alignment = 'center'
 
     include_intro = ''
     while include_intro not in (True, False):
@@ -260,5 +297,22 @@ if __name__ == '__main__':
                 overlay_intro_image = True
             elif overlay_intro_image == 'n':
                 overlay_intro_image = False
+
+    fullscreen_intro_image = ''
+    if overlay_intro_image:
+        while fullscreen_intro_image not in (True, False):
+            print('Make custom image fullscreen? (y/n)')
+            fullscreen_intro_image = input().lower()
+            if fullscreen_intro_image == 'y':
+                fullscreen_intro_image = True
+            elif fullscreen_intro_image == 'n':
+                fullscreen_intro_image = False
+
+    intro_image_duration = '0'
+    if overlay_intro_image:
+        while not intro_image_duration.isnumeric() or int(float(intro_image_duration)) <= 0 or int(float(intro_image_duration)) > clip_length:
+            print('Please enter your desired duration of the custom image in seconds.')
+            intro_image_duration = input()
+    intro_image_duration = int(float(intro_image_duration))
     
-    main(clip_selection, clip_length, alignment, include_intro, overlay_intro_image)
+    generate_recap(clip_selection_method, clip_length, sub_alignment, include_intro, overlay_intro_image, fullscreen_intro_image, intro_image_duration)
