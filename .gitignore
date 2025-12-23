@@ -2,3 +2,7 @@ logo*
 intro*
 *.mp4
 temp/
+build/
+dist/
+*.spec
+user_guide*
