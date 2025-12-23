@@ -135,7 +135,9 @@ def extract_clips(ws, ids, id_cells, clip_selection_method, clip_length, video_d
                     print(f'No chorus found for video {ids[i]}. Please choose a clip manually.')
                     missing_choruses.append(ids[i])
         if chorus_error:
-            raise TypeError(f'Auto-generation failed for some clips. Please choose clips manually for the videos specified below then try again.\n{missing_choruses}')
+            print(f'Auto-generation failed for some clips. Please choose clips manually for the videos specified below then try again.\n{missing_choruses}')
+            input('Press Enter to exit.')
+            raise TypeError('Auto-generation failed for some clips.')
     
     return video_clips
 
