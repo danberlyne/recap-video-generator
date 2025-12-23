@@ -4,19 +4,19 @@ This tool extracts clips from multiple video files, resizes them to the same res
 The user can either specify their desired clips manually or let `recap-video-generator` automatically select the best clip for each video by detecting choruses within the audio.
 
 # Requirements
-This tool uses the third party Python modules OpenPyXL, MoviePy, and Pychorus. Furthermore, Pychorus requires FFmpeg. Please install these before attempting to run the Python scripts included here.
+This tool uses the third party Python modules `OpenPyXL`, `MoviePy`, `Pychorus`, `jsonschema` and `ruamel.yaml`. Furthermore, `Pychorus` requires the non-Python package `FFmpeg`. Please install these before attempting to run the Python scripts included here.
 
 If you are on Linux, install via the following commands:
 
 ```
-pip install openpyxl moviepy pychorus
+pip install openpyxl moviepy pychorus jsonschema ruamel.yaml
 sudo apt install ffmpeg
 ```
 
 If you are on Windows:
 
 ```
-pip install openpyxl moviepy pychorus
+pip install openpyxl moviepy pychorus jsonschema ruamel.yaml
 winget install ffmpeg
 ```
 
@@ -26,9 +26,9 @@ winget install ffmpeg
     - The filenames of the video files in the `Videos` folder, including extensions;
     - (Optional) The start and end times of the video clips you wish to include in the recap, in the form `hh:mm:ss`;
     - (Optional) Three lines of subtitles for each clip.
-3. (Optional) If you wish to use a custom image overlay on your first clip, place your image in the same directory as `video_data.xlsx` and name it `intro.png`.
-4. (Optional) If you wish to use a custom font for subtitles, place your font file (in `.ttf` format) in the `Fonts` folder provided.
-5. Run `recap_generator.py` and follow the on-screen instructions.
-    - Note: If you specify that you are using your first clip as an intro clip, any subtitles for that clip will automatically be enlarged and placed in the centre of the screen. This may be used as an alternative to a custom image overlay.
+3. Specify any options for recap generation in the `options.yaml` file.
+    - This includes input/output file locations, clip selection options, subtitle properties, and intro clip properties.
+    - Note: If you specify that you are using your first clip as an intro clip, any subtitles for that clip will automatically be placed in the centre of the screen. This may be used as an alternative to a custom image overlay.
+4. Run `recap_generator.py`.
 
 Note, if the user does not specify a start and end time for a given clip, `recap-video-generator` will attempt to detect a chorus within the audio and select a clip automatically.

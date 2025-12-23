@@ -1,0 +1,83 @@
+##################
+# File locations #
+##################
+
+# The path to the video data spreadsheet. Must be an XLSX file.
+video_data_file: video_data.xlsx
+
+# The path to the directory containing the video files to be used for the recap.
+video_directory: Videos
+
+# The location to save the generated recap.
+output_file: recap.mp4
+
+
+##################
+# Clip selection #
+##################
+
+# Determines whether to select clips by automatically detecting choruses or by using manually specified start and end times.
+# Options are: auto, manual
+clip_selection_method: auto
+
+# The clip length in seconds. Note, this only applies to automatically selected clips. Manually selected clips will not be modified.
+clip_length: 15
+
+
+#######################
+# Subtitle properties #
+#######################
+
+# The alignment of the subtitles.
+# Options are: left, center, right
+sub_alignment: left
+
+# The font file to be used for the subtitle font.
+sub_font_file: Fonts/LiberationSans-Regular.ttf
+
+# The font size to be used for the subtitle font.
+sub_font_size: 50
+
+# The colour to be used for the subtitle text. Accepts colour names or hex values.
+sub_text_color: white
+
+# The colour to be used for the subtitle text outline. Accepts colour names or hex values.
+sub_stroke_color: black
+
+# The thickness of the subtitle text outline.
+sub_stroke_width: 3
+
+
+####################
+# Intro properties #
+####################
+
+# Determines whether the first clip is to be treated as an intro clip.
+include_intro: False
+
+# If True, overlays a user-specified image over the intro clip.
+use_overlay_intro_image: False
+
+# The path to the intro image overlay PNG file.
+intro_image_file: intro.png
+
+# The intro image will appear over the intro clip for the specified number of seconds.
+intro_image_duration: 10
+
+# If True, resizes the intro image overlay so that it covers the whole screen (while maintaining its aspect ratio).
+make_intro_image_fullscreen: True
+
+# The font file to be used for the intro font.
+intro_font_file: Fonts/LiberationSans-Bold.ttf
+
+# The font size to be used for the intro font.
+intro_font_size: 150
+
+# The colour to be used for the intro text. Accepts colour names or hex values.
+intro_text_color: white
+
+# The colour to be used for the intro text outline. Accepts colour names or hex values.
+intro_stroke_color: black
+
+# The thickness of the intro text outline.
+intro_stroke_width: 3

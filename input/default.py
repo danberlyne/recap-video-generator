@@ -1,0 +1,116 @@
+default_schema = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "recap_options_schema",
+    "title": "Recap options schema",
+    "description": "Schema that describes the options for the recap generator",
+    "type": "object",
+    "properties": {
+        "video_data_file": {
+            "type": "string",
+            "default": "video_data.xlsx",
+            "description": "The path to the video data spreadsheet. Must be an XLSX file."
+        },
+        "video_directory": {
+            "type": "string",
+            "default": "Videos",
+            "description": "The path to the directory containing the video files to be used for the recap."
+        },
+        "output_file": {
+        "type": "string",
+        "default": "recap.mp4",
+        "description": "The location to save the generated recap."
+        },
+        "clip_selection_method": {
+            "type": "string",
+            "default": "auto",
+            "enum": ["auto", "manual"],
+            "description": "Determines whether to select clips by automatically detecting choruses or by using manually specified start and end times."
+        },
+        "clip_length": {
+            "type": "number",
+            "default": 15,
+            "description": "The clip length in seconds. Note, this only applies to automatically selected clips. Manually selected clips will not be modified."
+        },
+        "sub_alignment": {
+            "type": "string",
+            "default": "left",
+            "enum": ["left", "center", "right"],
+            "description": "The alignment of the subtitles."
+        },
+        "sub_font_file": {
+            "type": "string",
+            "default": "Fonts/LiberationSans-Regular.ttf",
+            "description": "The font file to be used for the subtitle font."
+        },
+        "sub_font_size": {
+            "type": "number",
+            "default": 50,
+            "description": "The font size to be used for the subtitle font."
+        },
+        "sub_text_color": {
+            "type": "string",
+            "default": "white",
+            "description": "The colour to be used for the subtitle text. Accepts colour names or hex values."
+        },
+        "sub_stroke_color": {
+            "type": "string",
+            "default": "black",
+            "description": "The colour to be used for the subtitle text outline. Accepts colour names or hex values."
+        },
+        "sub_stroke_width": {
+            "type": "number",
+            "default": 3,
+            "description": "The thickness of the subtitle text outline."
+        },
+        "include_intro": {
+            "type": "boolean",
+            "default": False,
+            "description": "Determines whether the first clip is to be treated as an intro clip."
+        },
+        "use_overlay_intro_image": {
+            "type": "boolean",
+            "default": False,
+            "description": "If true, overlays a user-specified image over the intro clip."
+        },
+        "intro_image_file": {
+            "type": "string",
+            "default": "intro.png",
+            "description": "The path to the intro image overlay PNG file."
+        },
+        "intro_image_duration": {
+            "type": "number",
+            "default": 10,
+            "description": "The intro image will appear over the intro clip for the specified number of seconds."
+        },
+        "make_intro_image_fullscreen": {
+            "type": "boolean",
+            "default": True,
+            "description": "If true, resizes the intro image overlay so that it covers the whole screen (while maintaining its aspect ratio)."
+        },
+        "intro_font_file": {
+            "type": "string",
+            "default": "Fonts/LiberationSans-Bold.ttf",
+            "description": "The font file to be used for the intro font."
+        },
+        "intro_font_size": {
+            "type": "number",
+            "default": 150,
+            "description": "The font size to be used for the intro font."
+        },
+        "intro_text_color": {
+            "type": "string",
+            "default": "white",
+            "description": "The colour to be used for the intro text. Accepts colour names or hex values."
+        },
+        "intro_stroke_color": {
+            "type": "string",
+            "default": "black",
+            "description": "The colour to be used for the intro text outline. Accepts colour names or hex values."
+        },
+        "intro_stroke_width": {
+            "type": "number",
+            "default": 3,
+            "description": "The thickness of the intro text outline."
+        }
+    }
+}
