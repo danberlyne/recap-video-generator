@@ -12,11 +12,12 @@ from typing import Literal
 import jsonschema
 import ruamel.yaml as ry
 from input.default import default_schema
-import os
+import os, sys
 from audioread.exceptions import NoBackendError
 import warnings
 
 warnings.filterwarnings('ignore')
+# sys.tracebacklimit = 0
 
 fschema = os.path.join(os.path.dirname(os.path.realpath(__file__)), "input/schema.yaml")
 
@@ -287,3 +288,5 @@ if __name__ == '__main__':
         generate_recap(**options)
     except NoBackendError:
         raise NoBackendError('No audio backend detected. Please install FFmpeg or another backend.')
+    
+    input('Recap generation complete! Press Enter to exit.')
