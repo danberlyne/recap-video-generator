@@ -291,4 +291,7 @@ if __name__ == '__main__':
     except NoBackendError:
         raise NoBackendError('No audio backend detected. Please install FFmpeg or another backend.')
     
-    input('Recap generation complete! Press Enter to exit.')
+    try:
+        input('Recap generation complete! Press Enter to exit.')
+    except EOFError:
+        print('\rRecap generation complete!                     ')
